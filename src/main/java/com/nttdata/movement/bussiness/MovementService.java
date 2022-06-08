@@ -6,6 +6,6 @@ import reactor.core.publisher.Mono;
 
 public interface MovementService {
 
-    public Mono<Product> createProduct(MovementDto movementDto);
+    Mono<Product> createProductCustomer(MovementDto movementDto);
 
 }

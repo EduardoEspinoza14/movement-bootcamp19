@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: movement
+  cloud:
+    config:
+      uri: http://localhost:8081
+      username: bootcamp19
+      password: b00tc4mp19
+      profile: dev

@@ -3,6 +3,7 @@ package com.nttdata.movement.bussiness.impl;
 import com.nttdata.movement.bussiness.CustomerService;
 import com.nttdata.movement.model.dto.Customer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -11,6 +12,15 @@ import reactor.core.publisher.Mono;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
+
+    @Value("${api.customer.baseUri}")
+    private String baseUri;
+
+    @Value("${api.customer.personUri}")
+    private String personUri;
+
+    @Value("${api.customer.companyUri}")
+    private String companyUri;
 
     @Autowired
     WebClient.Builder webClientBuilder;
@@ -22,19 +32,19 @@ public class CustomerServiceImpl implements CustomerService {
         }
         return webClientBuilder.build()
                 .get()
-                .uri("http://localhost:8083/customer/{customerId}", id)
+                .uri(baseUri + "/{customerId}", id)
                 .retrieve()
                 .bodyToMono(Customer.class);
     }
 
     @Override
     public Mono<Customer> insertCustomer(Customer customer) {
-        String uri = "";
+        String uri;
         customer.setId(null);
         if(customer.getType().equals(Customer.CUSTOMER_TYPE_1)){
-            uri = "http://localhost:8083/person";
-        }else if(customer.getType().equals(Customer.CUSTOMER_TYPE_1)){
-            uri = "http://localhost:8083/company";
+            uri = personUri;
+        }else if(customer.getType().equals(Customer.CUSTOMER_TYPE_2)){
+            uri = companyUri;
         }else{
             return Mono.empty();
         }

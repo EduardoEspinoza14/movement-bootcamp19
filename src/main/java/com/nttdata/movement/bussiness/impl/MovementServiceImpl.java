@@ -23,15 +23,9 @@ public class MovementServiceImpl implements MovementService {
     ProductService productService;
 
     @Override
-    public Mono<Product> createProduct(MovementDto movementDto) {
+    public Mono<Product> createProductCustomer(MovementDto movementDto) {
         return Mono.justOrEmpty(movementDto)
-                .defaultIfEmpty(new MovementDto(new Customer(), new Product()))
-                /*.doOnNext(mov1 -> mov1.getCustomer().setId(
-                        Optional.ofNullable(mov1.getCustomer())
-                            .map(cus1 -> cus1.getId())
-                                .orElse("")
-                        )
-                )*/
+                        .defaultIfEmpty(new MovementDto(new Customer(), new Product()))
                 .flatMap(mov1 -> customerService.getCustomerById(mov1.getCustomer().getId()))
                         .defaultIfEmpty(new Customer(""))
                         .doOnNext(cus1-> {

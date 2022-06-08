@@ -4,6 +4,7 @@ import com.nttdata.movement.bussiness.ProductService;
 import com.nttdata.movement.model.dto.Customer;
 import com.nttdata.movement.model.dto.Product;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -16,6 +17,24 @@ import java.util.Date;
 @Service
 public class ProductServiceImpl implements ProductService {
 
+    @Value("${api.product.baseUri}")
+    private String baseUri;
+
+    @Value("${api.product.savingsAccountUri}")
+    private String savingsAccountUri;
+
+    @Value("${api.product.checkingAccountUri}")
+    private String checkingAccountUri;
+
+    @Value("${api.product.fixedTermUri}")
+    private String fixedTermUri;
+
+    @Value("${api.product.cardUri}")
+    private String cardUri;
+
+    @Value("${api.product.loanUri}")
+    private String loanUri;
+
     @Autowired
     WebClient.Builder webClientBuilder;
 
@@ -23,25 +42,25 @@ public class ProductServiceImpl implements ProductService {
     public Flux<Product> getProductsByCustomer(String customerId) {
         return webClientBuilder.build()
                 .get()
-                .uri("http://localhost:8082/product/{customerId}", customerId)
+                .uri(baseUri + "/{customerId}", customerId)
                 .retrieve()
                 .bodyToFlux(Product.class);
     }
 
     @Override
     public Mono<Product> insertProduct(Product product) {
-        String uri = "";
+        String uri;
         product.setStart_date(new Date());
         if(product.getType().equals(Product.PRODUCT_TYPE_1)){
-            uri = "http://localhost:8082/savings-account";
+            uri = savingsAccountUri;
         }else if(product.getType().equals(Product.PRODUCT_TYPE_2)){
-            uri = "http://localhost:8082/checking-account";
+            uri = checkingAccountUri;
         }else if(product.getType().equals(Product.PRODUCT_TYPE_3)){
-            uri = "http://localhost:8082/fixed-term";
+            uri = fixedTermUri;
         }else if(product.getType().equals(Product.PRODUCT_TYPE_4)){
-            uri = "http://localhost:8082/card";
+            uri = cardUri;
         }else if(product.getType().equals(Product.PRODUCT_TYPE_5)){
-            uri = "http://localhost:8082/loan";
+            uri = loanUri;
         }else{
             return Mono.empty();
         }

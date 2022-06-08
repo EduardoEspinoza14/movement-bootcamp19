@@ -20,9 +20,9 @@ public class MovementController {
     @Autowired
     MovementService service;
 
-    @PostMapping(value = "/create-product", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<Product> createProduct(@RequestBody MovementDto movementDto){
-        return service.createProduct(movementDto);
+    @PostMapping(value = "/create-product-customer", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<Product> createProductCustomer(@RequestBody MovementDto movementDto){
+        return service.createProductCustomer(movementDto);
     }
 
 }
