@@ -2,6 +2,7 @@ package com.nttdata.movement.bussiness.impl;
 
 import com.nttdata.movement.bussiness.ProductService;
 import com.nttdata.movement.model.dto.Customer;
+import com.nttdata.movement.model.dto.MovementDto;
 import com.nttdata.movement.model.dto.Product;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +51,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Mono<Product> insertProduct(Product product) {
         String uri;
+        product.setId(null);
         product.setStart_date(new Date());
+        if(product.getType() == null){ return Mono.empty(); }
         if(product.getType().equals(Product.PRODUCT_TYPE_1)){
             uri = savingsAccountUri;
         }else if(product.getType().equals(Product.PRODUCT_TYPE_2)){
@@ -70,6 +73,44 @@ public class ProductServiceImpl implements ProductService {
                 .body(BodyInserters.fromValue(product))
                 .retrieve()
                 .bodyToMono(Product.class);
+    }
+
+    @Override
+    public Mono<Product> validateCustomerCanProduct(MovementDto movementDto){
+        return Mono.just(movementDto)
+                .map(mov -> mov.getCustomer())
+                .flatMap(customer -> {
+                    if(movementDto.getProduct() == null || movementDto.getProduct().getType() == null || movementDto.getProduct().getType().isEmpty()){
+                        return Mono.empty();
+                    }else if(customer.getType().equals(Customer.CUSTOMER_TYPE_1)){
+                        if(movementDto.getProduct().getType().equals(Product.PRODUCT_TYPE_4)){
+                            return Mono.just(movementDto.getProduct());
+                        }else{
+                            return this.getProductsByCustomer(customer.getId()).collectList()
+                                    .flatMap(products -> {
+                                        boolean repeated = products.stream().anyMatch(product -> product.getType().equals(movementDto.getProduct().getType()));
+                                        if(repeated){
+                                            return Mono.empty();
+                                        }else{
+                                            return Mono.just(movementDto.getProduct());
+                                        }
+                                    });
+                        }
+                    }else if(customer.getType().equals(Customer.CUSTOMER_TYPE_2)){
+                        if(movementDto.getProduct().getType().equals(Product.PRODUCT_TYPE_1) || movementDto.getProduct().getType().equals(Product.PRODUCT_TYPE_3)){
+                            return Mono.empty();
+                        }else{
+                            return Mono.just(movementDto.getProduct());
+                        }
+                    }else{
+                        return Mono.empty();
+                    }
+                });
+    }
+
+    @Override
+    public Mono<Double> getAvailableBalance(String customerId, String productId) {
+        return null;
     }
 
 }

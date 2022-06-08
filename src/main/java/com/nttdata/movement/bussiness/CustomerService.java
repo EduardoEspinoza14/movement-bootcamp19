@@ -5,8 +5,10 @@ import reactor.core.publisher.Mono;
 
 public interface CustomerService {
 
-    public Mono<Customer> getCustomerById(String id);
+    Mono<Customer> getCustomerById(String id);
 
-    public Mono<Customer> insertCustomer(Customer customer);
+    Mono<Customer> insertCustomer(Customer customer);
+
+    Mono<Customer> checkCustomerExistsElseCreate(Customer customer);
 
 }
