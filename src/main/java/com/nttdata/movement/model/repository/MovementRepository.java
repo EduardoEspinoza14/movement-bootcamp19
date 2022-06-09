@@ -13,6 +13,8 @@ public interface MovementRepository extends ReactiveMongoRepository<MovementMong
 
     Flux<MovementMongo> findByProductId(String productId);
 
+    Flux<MovementMongo> findByProductIdOrderByDateDesc(String productId);
+
     Mono<Long> countByProductIdAndDateBetween(String productId, Date from, Date to);
 
 }

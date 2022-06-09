@@ -47,7 +47,7 @@ public class MovementServiceImpl implements MovementService {
                     if(product.getId() == null || product.getId().isEmpty() || product.getId().equals("")){
                         return Flux.empty();
                     }else{
-                        return movementRepository.findByProductId(product.getId())
+                        return movementRepository.findByProductIdOrderByDateDesc(product.getId())
                                 .map(MovementDto::transformIntoDto);
                     }
                 });
