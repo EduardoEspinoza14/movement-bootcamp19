@@ -28,7 +28,7 @@ public class Product {
     private Double credit_limit;
     private Date expiration_date;
     private String security_code;
-    protected Double commission_amount;
+    private Double commission_amount;
     private Integer single_day_movement;
     private Double credit_amount;
     private Integer payment_day;

@@ -15,6 +15,10 @@ public class MovementMongo {
     public static String MOVEMENT_TYPE_2 = "Expenses";
 
     public static String MOVEMENT_CONCEPT_1 = "Account Opening";
+    public static String MOVEMENT_CONCEPT_2 = "Withdrawal Account";
+    public static String MOVEMENT_CONCEPT_3 = "Deposit Account";
+    public static String MOVEMENT_CONCEPT_4 = "Payment Credit";
+    public static String MOVEMENT_CONCEPT_5 = "Spent Credit";
 
     @Id
     private String id;

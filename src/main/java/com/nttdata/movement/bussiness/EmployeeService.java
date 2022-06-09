@@ -8,6 +8,8 @@ public interface EmployeeService{
 
     Flux<Employee> listEmployees(String customerId);
 
+    Mono<Employee> getEmployee(String customerId, String employeeId);
+
     Mono<Employee> registerSigner(String customerId, Employee employee);
 
     Mono<Employee> registerHolder(String customerId, Employee employee);

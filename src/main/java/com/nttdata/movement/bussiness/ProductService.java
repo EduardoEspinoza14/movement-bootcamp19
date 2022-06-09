@@ -10,6 +10,8 @@ public interface ProductService {
 
     Flux<Product> getProductsByCustomer(String customerId);
 
+    Mono<Product> getProductByCustomerAndId(String customerId, String productId);
+
     Mono<Product> insertProduct(Product product);
 
     Mono<Product> validateCustomerCanProduct(MovementDto movementDto);

@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 
 public interface MovementService {
 
-    Flux<MovementDto> listMovements(String productId);
+    Flux<MovementDto> listMovements(String customerId, String productId);
 
     Mono<MovementDto> accountOpening(MovementDto movementDto);
 

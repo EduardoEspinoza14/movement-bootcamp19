@@ -1,9 +1,13 @@
 package com.nttdata.movement.bussiness.impl;
 
+import com.nttdata.movement.bussiness.CustomerService;
+import com.nttdata.movement.bussiness.MovementService;
 import com.nttdata.movement.bussiness.ProductService;
 import com.nttdata.movement.model.dto.Customer;
 import com.nttdata.movement.model.dto.MovementDto;
 import com.nttdata.movement.model.dto.Product;
+import com.nttdata.movement.model.mongo.MovementMongo;
+import com.nttdata.movement.model.repository.MovementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -39,6 +43,12 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     WebClient.Builder webClientBuilder;
 
+    @Autowired
+    CustomerService customerService;
+
+    @Autowired
+    MovementService movementService;
+
     @Override
     public Flux<Product> getProductsByCustomer(String customerId) {
         return webClientBuilder.build()
@@ -46,6 +56,16 @@ public class ProductServiceImpl implements ProductService {
                 .uri(baseUri + "/{customerId}", customerId)
                 .retrieve()
                 .bodyToFlux(Product.class);
+    }
+
+    @Override
+    public Mono<Product> getProductByCustomerAndId(String customerId, String productId) {
+        return customerService.getCustomerById(customerId)
+                .flatMap(customer -> webClientBuilder.build()
+                            .get()
+                            .uri(baseUri + "/{customerId}/{productId}", customer.getId(), productId)
+                            .retrieve()
+                            .bodyToMono(Product.class));
     }
 
     @Override
@@ -110,7 +130,19 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<Double> getAvailableBalance(String customerId, String productId) {
-        return null;
+        return movementService.listMovements(customerId, productId)
+                .collectList()
+                .flatMap(movements -> getProductByCustomerAndId(customerId, productId)
+                                .flatMap(product -> {
+                                    Double income = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_1)).mapToDouble(mov -> mov.getAmount()).sum();
+                                    Double expenses = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_2)).mapToDouble(mov -> mov.getAmount()).sum();
+                                    Double initial = (product.getType().equals(Product.PRODUCT_TYPE_4))?product.getCredit_limit():0.0;
+                                    if(product.getType().equals(Product.PRODUCT_TYPE_1) || product.getType().equals(Product.PRODUCT_TYPE_2) || product.getType().equals(Product.PRODUCT_TYPE_3) || product.getType().equals(Product.PRODUCT_TYPE_4)){
+                                        return Mono.just(initial - expenses + income);
+                                    }
+                                    return Mono.empty();
+                                })
+                );
     }
 
 }

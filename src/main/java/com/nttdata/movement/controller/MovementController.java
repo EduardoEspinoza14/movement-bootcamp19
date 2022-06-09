@@ -20,9 +20,9 @@ public class MovementController {
     @Autowired
     MovementService service;
 
-    @PostMapping(value = "/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Flux<MovementDto> listMovements(@PathVariable String productId){
-        return service.listMovements(productId);
+    @PostMapping(value = "/list-movements/{customerId}/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Flux<MovementDto> listMovements(@PathVariable String customerId, @PathVariable String productId){
+        return service.listMovements(customerId, productId);
     }
 
     @PostMapping(value = "/account-opening", produces = MediaType.APPLICATION_JSON_VALUE)
