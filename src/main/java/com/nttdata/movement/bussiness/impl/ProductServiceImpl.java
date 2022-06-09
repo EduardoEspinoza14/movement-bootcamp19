@@ -134,9 +134,9 @@ public class ProductServiceImpl implements ProductService {
                 .collectList()
                 .flatMap(movements -> getProductByCustomerAndId(customerId, productId)
                                 .flatMap(product -> {
-                                    Double income = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_1)).mapToDouble(mov -> mov.getAmount()).sum();
-                                    Double expenses = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_2)).mapToDouble(mov -> mov.getAmount()).sum();
-                                    Double initial = (product.getType().equals(Product.PRODUCT_TYPE_4))?product.getCredit_limit():0.0;
+                                    double income = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_1)).mapToDouble(mov -> mov.getAmount()).sum();
+                                    double expenses = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_2)).mapToDouble(mov -> mov.getAmount()).sum();
+                                    double initial = (product.getType().equals(Product.PRODUCT_TYPE_4))?product.getCredit_limit():0.0;
                                     if(product.getType().equals(Product.PRODUCT_TYPE_1) || product.getType().equals(Product.PRODUCT_TYPE_2) || product.getType().equals(Product.PRODUCT_TYPE_3) || product.getType().equals(Product.PRODUCT_TYPE_4)){
                                         return Mono.just(initial - expenses + income);
                                     }
