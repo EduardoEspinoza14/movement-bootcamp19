@@ -20,7 +20,7 @@ public class EmployeeController {
     @Autowired
     EmployeeService service;
 
-    @PostMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     public Flux<Employee> listEmployee(@PathVariable String customerId){
         return service.listEmployees(customerId);
     }

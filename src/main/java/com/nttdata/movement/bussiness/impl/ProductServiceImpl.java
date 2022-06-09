@@ -47,7 +47,7 @@ public class ProductServiceImpl implements ProductService {
     CustomerService customerService;
 
     @Autowired
-    MovementService movementService;
+    MovementRepository movementRepository;
 
     @Override
     public Flux<Product> getProductsByCustomer(String customerId) {
@@ -130,10 +130,15 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<Double> getAvailableBalance(String customerId, String productId) {
-        return movementService.listMovements(customerId, productId)
-                .collectList()
-                .flatMap(movements -> getProductByCustomerAndId(customerId, productId)
-                                .flatMap(product -> {
+        return getProductByCustomerAndId(customerId, productId)
+                .flatMap(product -> {
+                    if(product.getId() == null || product.getId().isEmpty() || product.getId().equals("")){
+                        return Mono.empty();
+                    }else{
+                        return movementRepository.findByProductId(product.getId())
+                                .map(MovementDto::transformIntoDto)
+                                .collectList()
+                                .flatMap(movements -> {
                                     double income = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_1)).mapToDouble(mov -> mov.getAmount()).sum();
                                     double expenses = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_2)).mapToDouble(mov -> mov.getAmount()).sum();
                                     double initial = (product.getType().equals(Product.PRODUCT_TYPE_4))?product.getCredit_limit():0.0;
@@ -141,8 +146,9 @@ public class ProductServiceImpl implements ProductService {
                                         return Mono.just(initial - expenses + income);
                                     }
                                     return Mono.empty();
-                                })
-                );
+                                });
+                    }
+                });
     }
 
 }

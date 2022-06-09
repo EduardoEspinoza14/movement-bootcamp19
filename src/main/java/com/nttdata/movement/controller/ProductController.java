@@ -20,7 +20,7 @@ public class ProductController {
     @Autowired
     ProductService service;
 
-    @PostMapping(value = "/available-balance/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/available-balance/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<Double> availableBalance(@PathVariable String customerId, @PathVariable String productId){
         return service.getAvailableBalance(customerId, productId);
     }

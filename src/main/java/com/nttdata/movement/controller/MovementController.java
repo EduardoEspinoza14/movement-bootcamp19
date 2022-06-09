@@ -20,13 +20,13 @@ public class MovementController {
     @Autowired
     MovementService service;
 
-    @PostMapping(value = "/list-movements/{customerId}/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/list-movements/{customerId}/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Flux<MovementDto> listMovements(@PathVariable String customerId, @PathVariable String productId){
         return service.listMovements(customerId, productId);
     }
 
     @PostMapping(value = "/account-opening", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<MovementDto> createProductCustomer(@RequestBody MovementDto movementDto){
+    public Mono<MovementDto> accountOpening(@RequestBody MovementDto movementDto){
         return service.accountOpening(movementDto);
     }
 
