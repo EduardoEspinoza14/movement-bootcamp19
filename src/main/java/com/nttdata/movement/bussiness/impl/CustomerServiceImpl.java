@@ -2,17 +2,25 @@ package com.nttdata.movement.bussiness.impl;
 
 import com.nttdata.movement.bussiness.CustomerService;
 import com.nttdata.movement.model.dto.Customer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.circuitbreaker.resilience4j.ReactiveResilience4JCircuitBreakerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
+
+    private static final String CIRCUIT_BREAKER_SERVICE_CUSTOMER = "cbServiceCustomer";
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
 
     @Value("${api.customer.baseUri}")
     private String baseUri;
@@ -26,6 +34,9 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     WebClient.Builder webClientBuilder;
 
+    @Autowired
+    ReactiveResilience4JCircuitBreakerFactory reactiveCircuitBreakerFactory;
+
     @Override
     public Mono<Customer> getCustomerById(String id) {
         if(id == null || id.isEmpty() || id.trim().equals("")){
@@ -35,7 +46,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .get()
                 .uri(baseUri + "/{customerId}", id)
                 .retrieve()
-                .bodyToMono(Customer.class);
+                .bodyToMono(Customer.class)
+                .transform(it -> reactiveCircuitBreakerFactory.create(CIRCUIT_BREAKER_SERVICE_CUSTOMER).run(it, this::customerFallback));
     }
 
     @Override
@@ -55,7 +67,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .uri(uri).contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(customer))
                 .retrieve()
-                .bodyToMono(Customer.class);
+                .bodyToMono(Customer.class)
+                .transform(it -> reactiveCircuitBreakerFactory.create(CIRCUIT_BREAKER_SERVICE_CUSTOMER).run(it, this::customerFallback));
     }
 
     @Override
@@ -72,6 +85,11 @@ public class CustomerServiceImpl implements CustomerService {
                     }
                 })
                 .flatMap(cus1 -> (cus1.getId() == null || cus1.getId().isEmpty()) ? this.insertCustomer(cus1) : Mono.just(cus1));
+    }
+
+    private Mono<Customer> customerFallback(Throwable e){
+        log.info("CUSTOMER SERVICE IS BREAKER - MONO");
+        return Mono.empty();
     }
 
 }

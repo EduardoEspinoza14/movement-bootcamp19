@@ -1,15 +1,21 @@
 package com.nttdata.movement.bussiness.impl;
 
+import com.netflix.discovery.EurekaClient;
 import com.nttdata.movement.bussiness.CustomerService;
-import com.nttdata.movement.bussiness.MovementService;
 import com.nttdata.movement.bussiness.ProductService;
 import com.nttdata.movement.model.dto.Customer;
 import com.nttdata.movement.model.dto.MovementDto;
 import com.nttdata.movement.model.dto.Product;
 import com.nttdata.movement.model.mongo.MovementMongo;
 import com.nttdata.movement.model.repository.MovementRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.circuitbreaker.resilience4j.ReactiveResilience4JCircuitBreakerFactory;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.loadbalancer.core.DiscoveryClientServiceInstanceListSupplier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -18,9 +24,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+
+    private static final String CIRCUIT_BREAKER_SERVICE_PRODUCT = "cbServiceProduct";
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass().getName());
 
     @Value("${api.product.baseUri}")
     private String baseUri;
@@ -44,10 +55,14 @@ public class ProductServiceImpl implements ProductService {
     WebClient.Builder webClientBuilder;
 
     @Autowired
+    ReactiveResilience4JCircuitBreakerFactory reactiveCircuitBreakerFactory;
+
+    @Autowired
     CustomerService customerService;
 
     @Autowired
     MovementRepository movementRepository;
+
 
     @Override
     public Flux<Product> getProductsByCustomer(String customerId) {
@@ -55,7 +70,8 @@ public class ProductServiceImpl implements ProductService {
                 .get()
                 .uri(baseUri + "/{customerId}", customerId)
                 .retrieve()
-                .bodyToFlux(Product.class);
+                .bodyToFlux(Product.class)
+                .transform(it -> reactiveCircuitBreakerFactory.create(CIRCUIT_BREAKER_SERVICE_PRODUCT).run(it, this::productsFallback));
     }
 
     @Override
@@ -65,7 +81,8 @@ public class ProductServiceImpl implements ProductService {
                             .get()
                             .uri(baseUri + "/{customerId}/{productId}", customer.getId(), productId)
                             .retrieve()
-                            .bodyToMono(Product.class));
+                            .bodyToMono(Product.class))
+                .transform(it -> reactiveCircuitBreakerFactory.create(CIRCUIT_BREAKER_SERVICE_PRODUCT).run(it, this::productFallback));
     }
 
     @Override
@@ -92,13 +109,14 @@ public class ProductServiceImpl implements ProductService {
                 .uri(uri).contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(product))
                 .retrieve()
-                .bodyToMono(Product.class);
+                .bodyToMono(Product.class)
+                .transform(it -> reactiveCircuitBreakerFactory.create(CIRCUIT_BREAKER_SERVICE_PRODUCT).run(it, this::productFallback));
     }
 
     @Override
     public Mono<Product> validateCustomerCanProduct(MovementDto movementDto){
         return Mono.just(movementDto)
-                .map(mov -> mov.getCustomer())
+                .map(MovementDto::getCustomer)
                 .flatMap(customer -> {
                     if(movementDto.getProduct() == null || movementDto.getProduct().getType() == null || movementDto.getProduct().getType().isEmpty()){
                         return Mono.empty();
@@ -139,8 +157,8 @@ public class ProductServiceImpl implements ProductService {
                                 .map(MovementDto::transformIntoDto)
                                 .collectList()
                                 .flatMap(movements -> {
-                                    double income = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_1)).mapToDouble(mov -> mov.getAmount()).sum();
-                                    double expenses = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_2)).mapToDouble(mov -> mov.getAmount()).sum();
+                                    double income = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_1)).mapToDouble(MovementDto::getAmount).sum();
+                                    double expenses = movements.stream().filter(mov -> mov.getType().equals(MovementMongo.MOVEMENT_TYPE_2)).mapToDouble(MovementDto::getAmount).sum();
                                     double initial = (product.getType().equals(Product.PRODUCT_TYPE_4))?product.getCredit_limit():0.0;
                                     if(product.getType().equals(Product.PRODUCT_TYPE_1) || product.getType().equals(Product.PRODUCT_TYPE_2) || product.getType().equals(Product.PRODUCT_TYPE_3) || product.getType().equals(Product.PRODUCT_TYPE_4)){
                                         return Mono.just(initial - expenses + income);
@@ -149,6 +167,16 @@ public class ProductServiceImpl implements ProductService {
                                 });
                     }
                 });
+    }
+
+    private Flux<Product> productsFallback(Throwable e){
+        log.info("PRODUCT SERVICE IS BREAKER - FLUX");
+        return Flux.empty();
+    }
+
+    private Mono<Product> productFallback(Throwable e){
+        log.info("PRODUCT SERVICE IS BREAKER - MONO");
+        return Mono.empty();
     }
 
 }
