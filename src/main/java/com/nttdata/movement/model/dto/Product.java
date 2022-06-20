@@ -1,7 +1,6 @@
 package com.nttdata.movement.model.dto;
 
 import java.util.Date;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,7 +24,7 @@ public class Product {
   }
 
   private String id;
-  private Date start_date;
+  private Date startDate;
   private String number;
   private String type;
   private Double creditLimit;

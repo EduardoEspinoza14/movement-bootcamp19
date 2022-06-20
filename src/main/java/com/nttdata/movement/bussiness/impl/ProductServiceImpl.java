@@ -92,7 +92,7 @@ public class ProductServiceImpl implements ProductService {
   public Mono<Product> insertProduct(Product product) {
     String uri;
     product.setId(null);
-    product.setStart_date(new Date());
+    product.setStartDate(new Date());
     if (product.getType() == null) {
       return Mono.empty();
     }
