@@ -1,4 +1,4 @@
-package com.nttdata.movement.config;
+package com.nttdata.movement.configuration;
 
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;

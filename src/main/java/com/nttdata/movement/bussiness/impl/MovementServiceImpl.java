@@ -3,6 +3,7 @@ package com.nttdata.movement.bussiness.impl;
 import com.nttdata.movement.bussiness.CustomerService;
 import com.nttdata.movement.bussiness.MovementService;
 import com.nttdata.movement.bussiness.ProductService;
+import com.nttdata.movement.configuration.KafkaProducerConfiguration;
 import com.nttdata.movement.model.dto.Customer;
 import com.nttdata.movement.model.dto.MovementDto;
 import com.nttdata.movement.model.dto.Product;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.kafka.sender.SenderOptions;
 
 /**
  * Class MovementServiceImpl.
@@ -34,10 +36,17 @@ public class MovementServiceImpl implements MovementService {
   @Autowired
   MovementRepository movementRepository;
 
+  @Autowired
+  private SenderOptions<String, MovementMongo> senderOptions;
+
   private Mono<MovementMongo> insertMovementDefault(MovementDto movementDto) {
     movementDto.setId(null);
     movementDto.setDate(new Date());
-    return movementRepository.insert(MovementDto.transformIntoMongo(movementDto));
+    return movementRepository.insert(MovementDto.transformIntoMongo(movementDto))
+            .doOnSuccess(movementMongo -> KafkaProducerConfiguration
+                    .senderCreate(senderOptions,
+                            KafkaProducerConfiguration.insertRecord(movementMongo))
+                    .subscribe());
   }
 
   @Override
@@ -60,8 +69,9 @@ public class MovementServiceImpl implements MovementService {
   public Mono<MovementDto> accountOpening(MovementDto movementDto) {
     return Mono.justOrEmpty(movementDto)
             .defaultIfEmpty(new MovementDto(new Customer(""), new Product("")))
-            .map(mov -> mov.getCustomer())
+            .map(MovementDto::getCustomer)
             .flatMap(customerService::checkCustomerExistsElseCreate)
+            .doOnNext(cus1 -> movementDto.getCustomer().setId(cus1.getId()))
             .doOnNext(cus1 -> movementDto.getProduct().setCustomerId(cus1.getId()))
             .flatMap(cus1 -> productService.validateCustomerCanProduct(movementDto))
             .defaultIfEmpty(new Product(""))
@@ -112,13 +122,13 @@ public class MovementServiceImpl implements MovementService {
   private Mono<MovementDto> registerMovementOfAccounts(MovementDto movementDto) {
     return Mono.justOrEmpty(movementDto)
             .defaultIfEmpty(new MovementDto(new Customer(""), new Product("")))
-            .map(mov -> mov.getCustomer())
+            .map(MovementDto::getCustomer)
             .flatMap(cus -> customerService.getCustomerById(cus.getId()))
-            .doOnNext(cus -> movementDto.setCustomer(cus))
+            .doOnNext(movementDto::setCustomer)
             .flatMap(cus -> productService
                     .getProductByCustomerAndId(cus.getId(), movementDto.getProduct().getId())
             )
-            .doOnNext(pro -> movementDto.setProduct(pro))
+            .doOnNext(movementDto::setProduct)
             .flatMap(product -> {
               Customer customer = movementDto.getCustomer();
               if (product.getId() == null
@@ -199,13 +209,13 @@ public class MovementServiceImpl implements MovementService {
   private Mono<MovementDto> registerMovementOfCredits(MovementDto movementDto) {
     return Mono.justOrEmpty(movementDto)
             .defaultIfEmpty(new MovementDto(new Customer(""), new Product("")))
-            .map(mov -> mov.getCustomer())
+            .map(MovementDto::getCustomer)
             .flatMap(cus -> customerService.getCustomerById(cus.getId()))
-            .doOnNext(cus -> movementDto.setCustomer(cus))
+            .doOnNext(movementDto::setCustomer)
             .flatMap(cus -> productService
                     .getProductByCustomerAndId(cus.getId(), movementDto.getProduct().getId())
             )
-            .doOnNext(pro -> movementDto.setProduct(pro))
+            .doOnNext(movementDto::setProduct)
             .flatMap(product -> {
               Customer customer = movementDto.getCustomer();
               if (product.getId() == null

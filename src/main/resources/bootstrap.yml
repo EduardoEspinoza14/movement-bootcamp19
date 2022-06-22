@@ -3,7 +3,7 @@ spring:
     name: movement
   cloud:
     config:
-      uri: http://172.17.0.2:8081
+      uri: http://172.26.0.5:8081
       username: bootcamp19
       password: b00tc4mp19
       profile: dev
