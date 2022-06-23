@@ -1,10 +1,12 @@
 package com.nttdata.movement.controller;
 
 import com.nttdata.movement.bussiness.MovementService;
-import com.nttdata.movement.model.dto.MovementDto;
+import com.nttdata.movement.model.mongo.MovementMongo;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,36 +35,47 @@ public class MovementController {
   @Autowired
   MovementService service;
 
-  @GetMapping(value = "/list-movements/{customerId}/{productId}",
-          produces = MediaType.APPLICATION_JSON_VALUE)
-  public Flux<MovementDto> listMovements(@PathVariable String customerId,
-                                         @PathVariable String productId) {
-    return service.listMovements(customerId, productId);
+  @GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Flux<MovementMongo> getAllMovements() {
+    return service.getMovements();
   }
 
-  @PostMapping(value = "/account-opening", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<MovementDto> accountOpening(@RequestBody MovementDto movementDto) {
-    return service.accountOpening(movementDto);
+  @GetMapping(value = "/product/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Flux<MovementMongo> getAllMovements(@PathVariable String productId) {
+    return service.getMovementsProduct(productId);
   }
 
-  @PostMapping(value = "/register-withdrawal", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<MovementDto> registerWithdrawal(@RequestBody MovementDto movementDto) {
-    return service.registerWithdrawal(movementDto);
+  @GetMapping(value = "/count/{productId}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Mono<Long> getCountMovementsProduct(@PathVariable String productId,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                             LocalDateTime start,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                                             LocalDateTime end) {
+    log.info("COUNT MOVEMENTS OF {} BETWEEN {} AND {}", productId, start, end);
+    return service.countMovementsByProductDate(productId, start, end);
   }
 
-  @PostMapping(value = "/register-deposit", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<MovementDto> registerDeposit(@RequestBody MovementDto movementDto) {
-    return service.registerDeposit(movementDto);
+  @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Mono<MovementMongo> getMovement(@PathVariable String id) {
+    return service.getMovement(id);
   }
 
-  @PostMapping(value = "/register-payment", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<MovementDto> registerPayment(@RequestBody MovementDto movementDto) {
-    return service.registerPayment(movementDto);
+  @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Mono<MovementMongo> createMovement(@RequestBody MovementMongo movement) {
+    return service.insertMovement(movement);
   }
 
-  @PostMapping(value = "/register-spent", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<MovementDto> registerSpent(@RequestBody MovementDto movementDto) {
-    return service.registerSpent(movementDto);
+  @PostMapping(value = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Mono<MovementMongo> modifyMovement(@RequestBody MovementMongo movement,
+                                            @PathVariable String id) {
+    return service.updateMovement(movement, id);
+  }
+
+  @PostMapping(value = "/delete/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public Mono<Void> removeMovement(@PathVariable String id) {
+    return service.deleteMovement(id);
   }
 
 }

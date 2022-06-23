@@ -27,7 +27,7 @@ public class KafkaProducerConfiguration {
   public static final String TOPIC_UPDATE = "movement.update";
   public static final String TOPIC_DELETE = "movement.delete";
 
-  @Value(value = "${kafka.bootstrapAddress}")
+  @Value(value = "${kafka.bootstrapAddress:}")
   private String bootstrapAddress;
 
   public static Flux<SenderResult<Long>> senderCreate(

@@ -1,7 +1,7 @@
 package com.nttdata.movement.bussiness;
 
-import com.nttdata.movement.model.dto.MovementDto;
-import com.nttdata.movement.model.dto.Product;
+import com.nttdata.movement.model.mongo.MovementMongo;
+import java.time.LocalDateTime;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -10,23 +10,19 @@ import reactor.core.publisher.Mono;
  */
 public interface MovementService {
 
+  Flux<MovementMongo> getMovements();
+
   //PARA LISTAR LOS MOVIMIENTOS DE UN PRODUCTO POR ID DE PRODUCTO Y CLIENTE
-  Flux<MovementDto> listMovements(String customerId, String productId);
+  Flux<MovementMongo> getMovementsProduct(String productId);
 
-  //PARA REGISTRAR EL PRIMER MOVIMIENTO DE UN PRODUCTO,
-  // ESTE MOVIMIENTO DE APERTURA TAMBIEN REGISTRA EL PRODUCTO Y EL CLIENTE DE SER NECESARIO
-  Mono<MovementDto> accountOpening(MovementDto movementDto);
+  Mono<MovementMongo> getMovement(String id);
 
-  //PARA REGISTRAR UN MOVIMIENTO DE RETIRO SOBRE LOS PRODUCTOS DE TIPO CUENTAS
-  Mono<MovementDto> registerWithdrawal(MovementDto movementDto);
+  Mono<MovementMongo> insertMovement(MovementMongo customer);
 
-  //PARA REGISTRAR UN MOVIMIENTO DE DEPOSITO SOBRE LOS PRODUCTOS DE TIPO CUENTAS
-  Mono<MovementDto> registerDeposit(MovementDto movementDto);
+  Mono<MovementMongo> updateMovement(MovementMongo customer, String id);
 
-  //PARA REGISTRAR UN PAGO SOBRE UN PRODUCTO DE TIPO CREDITO
-  Mono<MovementDto> registerPayment(MovementDto movementDto);
+  Mono<Void> deleteMovement(String id);
 
-  //PARA REGISTRAR UN GASTO O COSUMO SOBRE UN PRODUCTO DE TIPO CREDITO
-  Mono<MovementDto> registerSpent(MovementDto movementDto);
+  Mono<Long> countMovementsByProductDate(String productId, LocalDateTime start, LocalDateTime end);
 
 }

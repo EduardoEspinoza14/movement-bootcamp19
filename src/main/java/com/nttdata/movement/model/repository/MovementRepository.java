@@ -1,7 +1,7 @@
 package com.nttdata.movement.model.repository;
 
 import com.nttdata.movement.model.mongo.MovementMongo;
-import java.util.Date;
+import java.time.LocalDateTime;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -17,6 +17,6 @@ public interface MovementRepository extends ReactiveMongoRepository<MovementMong
 
   Flux<MovementMongo> findByProductIdOrderByDateDesc(String productId);
 
-  Mono<Long> countByProductIdAndDateBetween(String productId, Date from, Date to);
+  Mono<Long> countByProductIdAndDateBetween(String productId, LocalDateTime from, LocalDateTime to);
 
 }
